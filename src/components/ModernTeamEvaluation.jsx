@@ -346,7 +346,7 @@ const ModernTeamEvaluation = ({ onComplete }) => {
         // API 요청
         console.log('API 요청 시작:', requestData);
 
-        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/evaluations', {
+        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app/api/evaluations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

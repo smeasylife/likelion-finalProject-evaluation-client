@@ -12,7 +12,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
 
     try {
       console.log('결과 재조회 시도...');
-      const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/results', {
+      const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app/api/results', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
     const fetchResults = async () => {
       try {
         console.log('결과 조회 시도...');
-        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/results', {
+        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app/api/results', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
