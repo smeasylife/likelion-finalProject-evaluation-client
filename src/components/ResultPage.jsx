@@ -12,7 +12,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
 
     try {
       console.log('결과 재조회 시도...');
-      const response = await fetch('http://localhost:8080/api/results', {
+      const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/results', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
       let errorMessage = '서버와 통신할 수 없습니다.';
 
       if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        errorMessage = '백엔드 서버에 연결할 수 없습니다. (http://localhost:8080) 서버가 실행 중인지 확인해주세요.';
+        errorMessage = '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.';
       } else if (err.message) {
         errorMessage = `네트워크 오류: ${err.message}`;
       }
@@ -50,7 +50,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
     const fetchResults = async () => {
       try {
         console.log('결과 조회 시도...');
-        const response = await fetch('http://localhost:8080/api/results', {
+        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/results', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ const ResultPage = ({ userInfo, onViewResults }) => {
             <p>💡 해결 방법:</p>
             <ul style={{ textAlign: 'left', marginLeft: '20px' }}>
               <li>Spring Boot 백엔드 서버가 실행 중인지 확인해주세요</li>
-              <li>서버 주소: http://localhost:8080</li>
+              <li>서버 주소: 서버가 실행 중인지 확인해주세요</li>
               <li>브라우저 개발자 도구(F12)의 콘솔에서 자세한 오류를 확인할 수 있습니다</li>
             </ul>
           </div>

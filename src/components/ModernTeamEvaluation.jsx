@@ -346,7 +346,7 @@ const ModernTeamEvaluation = ({ onComplete }) => {
         // API 요청
         console.log('API 요청 시작:', requestData);
 
-        const response = await fetch('http://localhost:8080/api/evaluations', {
+        const response = await fetch('https://likelion-backend-415042403981.asia-northeast3.run.app:8080/api/evaluations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -407,7 +407,7 @@ const ModernTeamEvaluation = ({ onComplete }) => {
         let errorMessage = '서버와 통신할 수 없습니다. 다시 시도해주세요.';
 
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-          errorMessage = '백엔드 서버에 연결할 수 없습니다. (http://localhost:8080) 서버가 실행 중인지 확인해주세요.';
+          errorMessage = '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.';
         } else if (error.message) {
           errorMessage = `오류: ${error.message}`;
         }
