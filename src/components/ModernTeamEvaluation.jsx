@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 const STORAGE_KEY = 'project_evaluation_data';
 
 const teams = [
-  { value: 'team1', name: '1팀 - TimeWizard' },
-  { value: 'team2', name: '2팀 - Grocering' },
-  { value: 'team3', name: '3팀 - StudyHub' },
-  { value: 'team4', name: '4팀 - CodeShare' }
+  { value: 'team1', name: 'Team 1' },
+  { value: 'team2', name: 'Team 2' },
+  { value: 'team3', name: 'Team 3' },
+  { value: 'team4', name: 'Team 4' }
 ];
 
 const questions = [
@@ -219,10 +219,15 @@ const ModernTeamEvaluation = ({ onComplete }) => {
 
   // 알림 표시
   const showAlert = (message, type) => {
+    console.log('알림 표시:', message, type); // 디버깅용
     setAlert({ show: true, message, type });
+
+    // 에러 메시지는 더 오래 표시
+    const duration = type === 'error' ? 5000 : 3000;
+
     setTimeout(() => {
       setAlert({ show: false, message: '', type: '' });
-    }, 3000);
+    }, duration);
   };
 
   // 로컬스토리지에서 불러오기
@@ -232,9 +237,56 @@ const ModernTeamEvaluation = ({ onComplete }) => {
       const data = JSON.parse(saved);
       setEvaluatorName(data.evaluatorName || '');
       setSelectedTeam(data.team || '');
-      setEvaluatorType(data.evaluatorType || '');
-      setAnswers(data.answers || {});
+      setEvaluatorType(data.evaluatorRole === '심사위원' ? 'judge' : 'member');
+      // 명세서에는 scores 구조만 저장되므로 answers는 초기화
+      setAnswers({});
     }
+  };
+
+  // 점수 계산 함수
+  const calculateScores = () => {
+    const designQuestions = questions.filter(q => q.category === '디자인');
+    const developmentQuestions = questions.filter(q => q.category === '개발');
+    const commonQuestions = questions.filter(q => q.category === '공통');
+
+    const designScore = designQuestions.reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+    const developmentScore = developmentQuestions.reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+    const commonScore = commonQuestions.reduce((sum, q) => sum + (answers[q.id] || 0), 0);
+
+    return {
+      designTotalScore: designScore,
+      developmentTotalScore: developmentScore,
+      commonTotalScore: commonScore
+    };
+  };
+
+  // 로컬스토리지 저장
+  const saveToLocalStorage = () => {
+    const dataToSave = {
+      evaluatorName,
+      evaluatorRole: evaluatorType === 'judge' ? '심사위원' : '아기사자',
+      currentPage: 1, // 1페이지 방식이므로 항상 1
+      scores: teams.reduce((acc, team) => {
+        if (team.value === selectedTeam) {
+          // 현재 선택된 팀의 점수만 계산
+          const scores = calculateScores();
+          acc[team.value] = {
+            design: scores.designTotalScore,
+            development: scores.developmentTotalScore,
+            common: scores.commonTotalScore
+          };
+        } else {
+          // 다른 팀은 기존 데이터 유지 또는 초기화
+          acc[team.value] = {
+            design: 0,
+            development: 0,
+            common: 0
+          };
+        }
+        return acc;
+      }, {})
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
   };
 
   // 답변 변경
@@ -243,9 +295,13 @@ const ModernTeamEvaluation = ({ onComplete }) => {
       ...prev,
       [questionId]: parseInt(value)
     }));
+
+    // 자동 저장
+    setTimeout(() => {
+      saveToLocalStorage();
+    }, 100);
   };
 
-  
   // 폼 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -274,34 +330,89 @@ const ModernTeamEvaluation = ({ onComplete }) => {
       try {
         const evaluatorRole = evaluatorType === 'judge' ? '심사위원' : '아기사자';
         const teamName = teams.find(t => t.value === selectedTeam)?.name;
+        const scores = calculateScores();
 
-        // 지금은 API 연결 없이 바로 결과창으로 이동
-        console.log('제출 데이터:', {
-          evaluatorName: evaluatorName.trim(),
+        const requestData = {
+          teamName: teamName,
           evaluatorRole: evaluatorRole,
-          team: selectedTeam,
-          answers: answers
+          evaluatorName: evaluatorName.trim(),
+          designTotalScore: scores.designTotalScore,
+          developmentTotalScore: scores.developmentTotalScore,
+          commonTotalScore: scores.commonTotalScore
+        };
+
+        console.log('제출 데이터:', requestData);
+
+        // API 요청
+        console.log('API 요청 시작:', requestData);
+
+        const response = await fetch('http://localhost:8080/api/evaluations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData)
         });
 
-        // 제출 성공 후 데이터 초기화
-        setEvaluatorName('');
-        setSelectedTeam('');
-        setEvaluatorType('');
-        setAnswers({});
+        console.log('API 응답 상태:', response.status);
 
-        // 로컬스토리지 정리
-        localStorage.removeItem(STORAGE_KEY);
+        if (response.ok) {
+          const result = await response.json();
+          console.log('제출 성공:', result);
 
-        showAlert('🎉 채점이 성공적으로 제출되었습니다!', 'success');
+          // 제출 성공 후 데이터 초기화
+          setEvaluatorName('');
+          setSelectedTeam('');
+          setEvaluatorType('');
+          setAnswers({});
 
-        // 1.5초 후 결과창으로 이동
-        setTimeout(() => {
-          if (onComplete) onComplete();
-        }, 1500);
+          // 로컬스토리지 정리
+          localStorage.removeItem(STORAGE_KEY);
+
+          showAlert('🎉 채점이 성공적으로 제출되었습니다!', 'success');
+
+          // 1.5초 후 결과창으로 이동
+          setTimeout(() => {
+            if (onComplete) onComplete();
+          }, 1500);
+        } else {
+          let errorMessage = '제출에 실패했습니다.';
+
+          try {
+            const errorData = await response.json();
+            console.error('서버 에러 응답:', errorData);
+
+            if (response.status === 409) {
+              errorMessage = '⚠️ 이미 채점을 완료하셨습니다. 동일한 팀은 중복 평가할 수 없습니다.';
+            } else {
+              errorMessage = `❌ 제출 실패: ${errorData.message || errorData.error || '서버 오류'}`;
+            }
+          } catch (jsonError) {
+            // JSON 파싱 실패 시 텍스트로 시도
+            try {
+              const errorText = await response.text();
+              console.error('서버 에러 텍스트:', errorText);
+              errorMessage = `❌ 서버 오류 (${response.status}): ${errorText}`;
+            } catch (textError) {
+              console.error('에러 응답 파싱 실패:', textError);
+              errorMessage = `❌ 서버 오류 (${response.status}): 응답을 처리할 수 없습니다.`;
+            }
+          }
+
+          showAlert(errorMessage, 'error');
+        }
 
       } catch (error) {
         console.error('제출 중 오류 발생:', error);
-        showAlert('❌ 제출 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        let errorMessage = '서버와 통신할 수 없습니다. 다시 시도해주세요.';
+
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          errorMessage = '백엔드 서버에 연결할 수 없습니다. (http://localhost:8080) 서버가 실행 중인지 확인해주세요.';
+        } else if (error.message) {
+          errorMessage = `오류: ${error.message}`;
+        }
+
+        showAlert(`❌ ${errorMessage}`, 'error');
       }
     }
   };
@@ -316,11 +427,19 @@ const ModernTeamEvaluation = ({ onComplete }) => {
   return (
     <div className="page-container">
       <div className="header">
-        <h1>🏆 프로젝트 최종 발표 채점</h1>
-        <p>각 항목을 신중하게 평가해주세요</p>
+        <div className="header-text">
+          <h1>🏆 프로젝트 최종 발표 채점</h1>
+          <p>각 항목을 신중하게 평가해주세요</p>
+        </div>
       </div>
 
       <div className="content">
+        {/* 결과보기 버튼 */}
+        <div className="result-view-section">
+          <button type="button" className="btn btn-secondary result-view-btn" onClick={onComplete}>
+            🏆 현재 결과 확인하기
+          </button>
+        </div>
         {/* 알림 메시지 */}
         {alert.show && (
           <div className={`alert alert-${alert.type}`}>
@@ -352,7 +471,10 @@ const ModernTeamEvaluation = ({ onComplete }) => {
                 type="text"
                 id="evaluatorName"
                 value={evaluatorName}
-                onChange={(e) => setEvaluatorName(e.target.value)}
+                onChange={(e) => {
+                  setEvaluatorName(e.target.value);
+                  saveToLocalStorage();
+                }}
                 className="form-input"
                 placeholder="이름을 입력하세요"
                 required
@@ -368,6 +490,7 @@ const ModernTeamEvaluation = ({ onComplete }) => {
                   setSelectedTeam(e.target.value);
                   // 팀이 변경되면 이전 답변 초기화
                   setAnswers({});
+                  saveToLocalStorage();
                 }}
                 required
               >
@@ -388,7 +511,10 @@ const ModernTeamEvaluation = ({ onComplete }) => {
                   name="evaluatorType"
                   value="judge"
                   checked={evaluatorType === 'judge'}
-                  onChange={(e) => setEvaluatorType(e.target.value)}
+                  onChange={(e) => {
+                    setEvaluatorType(e.target.value);
+                    saveToLocalStorage();
+                  }}
                   required
                 />
                 <label htmlFor="judge">
@@ -402,7 +528,10 @@ const ModernTeamEvaluation = ({ onComplete }) => {
                   name="evaluatorType"
                   value="member"
                   checked={evaluatorType === 'member'}
-                  onChange={(e) => setEvaluatorType(e.target.value)}
+                  onChange={(e) => {
+                    setEvaluatorType(e.target.value);
+                    saveToLocalStorage();
+                  }}
                   required
                 />
                 <label htmlFor="member">
