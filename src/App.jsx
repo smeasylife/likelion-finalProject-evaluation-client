@@ -5,7 +5,6 @@ import ResetPage from './components/ResetPage';
 import './App.css';
 
 function App() {
-  const [showResults, setShowResults] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   useEffect(() => {
@@ -17,28 +16,19 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const handleEvaluationComplete = () => {
-    setShowResults(true);
-    window.history.pushState({}, '', '/');
-  };
-
-  const handleViewEvaluation = () => {
-    setShowResults(false);
-    window.history.pushState({}, '', '/');
-  };
-
   // Routing logic
   if (currentPath === '/reset-admin-2024') {
     return <ResetPage />;
   }
 
+  // Results page - only accessible via direct path
+  if (currentPath === '/results') {
+    return <ResultPage userInfo={null} onViewResults={() => window.history.pushState({}, '', '/')} />;
+  }
+
   return (
     <div className="App">
-      {showResults ? (
-        <ResultPage userInfo={null} onViewResults={handleViewEvaluation} />
-      ) : (
-        <ModernTeamEvaluation onComplete={handleEvaluationComplete} />
-      )}
+      <ModernTeamEvaluation />
     </div>
   );
 }

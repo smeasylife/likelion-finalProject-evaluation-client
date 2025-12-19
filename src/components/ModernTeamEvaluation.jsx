@@ -204,7 +204,7 @@ const questions = [
   }
 ];
 
-const ModernTeamEvaluation = ({ onComplete }) => {
+const ModernTeamEvaluation = () => {
   const [evaluatorName, setEvaluatorName] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
   const [evaluatorType, setEvaluatorType] = useState('');
@@ -370,11 +370,6 @@ const ModernTeamEvaluation = ({ onComplete }) => {
           localStorage.removeItem(STORAGE_KEY);
 
           showAlert('🎉 채점이 성공적으로 제출되었습니다!', 'success');
-
-          // 1.5초 후 결과창으로 이동
-          setTimeout(() => {
-            if (onComplete) onComplete();
-          }, 1500);
         } else {
           let errorMessage = '제출에 실패했습니다.';
 
@@ -434,12 +429,7 @@ const ModernTeamEvaluation = ({ onComplete }) => {
       </div>
 
       <div className="content">
-        {/* 결과보기 버튼 */}
-        <div className="result-view-section">
-          <button type="button" className="btn btn-secondary result-view-btn" onClick={onComplete}>
-            🏆 현재 결과 확인하기
-          </button>
-        </div>
+  
         {/* 알림 메시지 */}
         {alert.show && (
           <div className={`alert alert-${alert.type}`}>
